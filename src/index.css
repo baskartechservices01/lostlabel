@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Cinzel', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+
+  --color-lost-black: #070707;
+  --color-lost-nearblack: #0c0c0c;
+  --color-lost-charcoal: #151515;
+  --color-lost-surface: #1a1a1a;
+  --color-lost-border: #262626;
+  --color-lost-border-light: #383838;
+  --color-lost-muted: #8e8b83;
+  --color-lost-ivory: #e8e4d9;
+  --color-lost-cream: #faf7f0;
+  --color-lost-metallic: #b3b0a6;
+}
+
+:root {
+  color-scheme: dark;
+  --bg-primary: #070707;
+  --text-primary: #e8e4d9;
+  --border-subtle: #222222;
+}
+
+body {
+  margin: 0;
+  background-color: #070707;
+  color: #e8e4d9;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom minimal dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3e3e3e;
+}
+
+/* Streetwear typography utility classes */
+.font-cinzel {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.font-editorial {
+  font-family: 'Cinzel', Georgia, serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.font-mono-code {
+  font-family: 'Space Grotesk', monospace;
+}
+
+/* Noise texture & glow effects */
+.bg-noise {
+  background-image: radial-gradient(rgba(232, 228, 217, 0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.glow-ivory {
+  box-shadow: 0 0 40px -10px rgba(232, 228, 217, 0.15);
+}
+
+.glow-ivory-subtle {
+  box-shadow: 0 0 25px -5px rgba(232, 228, 217, 0.08);
+}
+

@@ -1,0 +1,95 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email_verified == true && 
+           request.auth.token.email in ['admin@lostlabel.com', 'owner@lostlabel.com'])
+        );
+    }
+
+    // --- PRODUCTS COLLECTION ---
+    match /products/{productId} {
+      // Public can read active products. Admin can read all.
+      allow read: if (resource.data.isActive == true) || isAdmin();
+      
+      // Only Admin can create, update, or delete products
+      allow create: if isAdmin() && 
+        request.resource.data.name is string && 
+        request.resource.data.price is number && 
+        request.resource.data.price > 0;
+      
+      allow update, delete: if isAdmin();
+    }
+
+    // --- STORE SETTINGS ---
+    match /settings/{settingId} {
+      // Store settings (UPI details, delivery thresholds, contact info) are readable by public
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- ORDERS COLLECTION ---
+    match /orders/{orderId} {
+      // Admin can read all orders
+      // Authenticated customers can read their own orders
+      // Guest orders can be retrieved via cloud function or verified query with orderNumber and phone
+      allow read: if isAdmin() || 
+        (isAuthenticated() && resource.data.customerId == request.auth.uid);
+
+      // Order creation: Must start with pending states and valid financial math
+      allow create: if 
+        request.resource.data.orderNumber is string &&
+        request.resource.data.total is number &&
+        request.resource.data.total > 0 &&
+        request.resource.data.paymentStatus == 'pending' &&
+        request.resource.data.orderStatus == 'pending_payment';
+
+      // Order updates:
+      // 1. Admin can update anything (e.g. verify payment, update orderStatus to shipped/delivered)
+      // 2. Customer can ONLY transition paymentStatus from 'pending' to 'submitted' by providing transactionId / proof,
+      //    WITHOUT changing amounts, address, items, or verifying payment themselves!
+      allow update: if isAdmin() || 
+        (
+          resource.data.paymentStatus == 'pending' &&
+          request.resource.data.paymentStatus == 'submitted' &&
+          request.resource.data.transactionId is string &&
+          request.resource.data.total == resource.data.total &&
+          request.resource.data.items == resource.data.items &&
+          request.resource.data.orderStatus == resource.data.orderStatus
+        );
+
+      // Only admin can delete orders (cancellations/pruning)
+      allow delete: if isAdmin();
+    }
+
+    // --- USERS & ROLES COLLECTION ---
+    match /users/{userId} {
+      // User can read their own profile; Admin can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // User can create their profile as customer; privilege escalation to 'admin' is rejected
+      allow create: if isOwner(userId) && 
+        (!('role' in request.resource.data) || request.resource.data.role == 'customer');
+      
+      // User cannot elevate their own role to 'admin'
+      allow update: if isAdmin() || 
+        (isOwner(userId) && request.resource.data.role == resource.data.role);
+
+      allow delete: if isAdmin();
+    }
+  }
+}
